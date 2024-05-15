@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections;
 
 namespace app // Note: actual namespace depends on the project name.
 {
     internal class Program
     {
         //Обработка введённых данных в массив
-        static string[] get_chips_arr(string inp_v)
+        static string[] GetChipsArr(string inp_v)
         {
             if (inp_v.StartsWith("chips:"))
             {
@@ -18,7 +19,7 @@ namespace app // Note: actual namespace depends on the project name.
         }
 
         //Получаем индексы при итерации по массиву
-        static int[] get_indexes(int len, int position, int step)
+        static int[] GetIndexes(int len, int position, int step)
         {
             int ind1, ind2;
             ind1 = position + step;
@@ -35,7 +36,7 @@ namespace app // Note: actual namespace depends on the project name.
         }
 
         //Оптимизируем массив, чтобы первым был индекс меньшего значения
-        static int[] update_indexes(int[] chips, int[] ind)
+        static int[] UpdateIndexes(int[] chips, int[] ind)
         {
 
             if (chips[ind[1]] <= chips[ind[0]])
@@ -49,7 +50,7 @@ namespace app // Note: actual namespace depends on the project name.
         }
 
         //Индекс максиимального элемента
-        static int get_m_index(int[] chips)
+        static int GetMaxIndex(int[] chips)
         {
             int m_el = 0;
             int i_m = 0;
@@ -65,7 +66,7 @@ namespace app // Note: actual namespace depends on the project name.
         }
 
         //Вычисляем изменение значения неровности при перемещении
-        static int get_some(int value, int mean, int asperity)
+        static int GetSome(int value, int mean, int asperity)
         {
             int some = value - mean;    //Если + то есть излишек, - нехватка
             if ((some < 0 && asperity > 0) || (some > 0 && asperity < 0))
@@ -85,37 +86,39 @@ namespace app // Note: actual namespace depends on the project name.
         }
 
         //Считаем колличество шагов для выравнивания. Проверка среднего значения происходит до вызова метода!
-        static int count_steps(int[] chips, int mean)
+        static int CountSteps(int[] chips, int mean)
         {
             int steps = 0;
             int little_step;
             int[] indexes;
-            int i = get_m_index(chips: chips);
+            int i = GetMaxIndex(chips: chips);
             while (chips[i] != mean)
             {
-                if (chips[i] != mean)
+                little_step = 0;
+                int some_chip = 0;
+                int asperity = mean - chips[i];    //Неровность если +: надо добавить до средней, если -: то отнять лишнее
+                while ((asperity != 0) && (some_chip == 0))
                 {
-                    little_step = 0;
-                    int asperity = mean - chips[i];    //Неровность если +: надо добавить до средней, если -: то отнять лишнее
-                    while (asperity != 0)
+                    little_step++;
+                    indexes = GetIndexes(len: chips.Length, position: i, step: little_step);
+                    indexes = UpdateIndexes(chips: chips, ind: indexes);
+                    for (int j = 0; j < 2; j++)
                     {
-                        little_step++;
-                        indexes = get_indexes(len: chips.Length, position: i, step: little_step);
-                        indexes = update_indexes(chips: chips, ind: indexes);
-                        for (int j = 0; j < 2; j++)
+                        if ((chips[i] != mean) && (chips[indexes[j]] != mean))
                         {
-                            if ((chips[i] != mean) && (chips[indexes[j]] != mean))
+                            some_chip = GetSome(value: chips[indexes[j]], mean: mean, asperity: asperity);
+                            chips[i] += some_chip;
+                            chips[indexes[j]] -= some_chip;
+                            steps += little_step * Math.Abs(some_chip);
+                            asperity -= some_chip;
+                            if (some_chip != 0)
                             {
-                                int some_chip = get_some(value: chips[indexes[j]], mean: mean, asperity: asperity);
-                                chips[i] += some_chip;
-                                chips[indexes[j]] -= some_chip;
-                                steps += little_step * Math.Abs(some_chip);
-                                asperity -= some_chip;
+                                break;
                             }
                         }
                     }
                 }
-                i = get_m_index(chips: chips);
+                i = GetMaxIndex(chips: chips);
             }
             return steps;
         }
@@ -124,7 +127,7 @@ namespace app // Note: actual namespace depends on the project name.
         {
             Console.WriteLine("Input:");
             string inp_v = Console.ReadLine() ?? "";
-            string[] text_chips = get_chips_arr(inp_v: inp_v);
+            string[] text_chips = GetChipsArr(inp_v: inp_v);
             byte[] chips;
             try
             {
@@ -145,7 +148,7 @@ namespace app // Note: actual namespace depends on the project name.
             }
             int int_mean = Convert.ToInt32(mean);
             int[] int_chips = Array.ConvertAll(chips, Convert.ToInt32);
-            int steps = count_steps(chips: int_chips, mean: int_mean);
+            int steps = CountSteps(chips: int_chips, mean: int_mean);
             Console.WriteLine($"{steps}");
             Console.ReadLine();
         }
